@@ -1,7 +1,6 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 import csv
-from datetime import datetime
-from employees_schema import init_db, insert_data
+from employees_schema import init_db, insert_data, get_db_connection
 from pathlib import Path
 
 app = Flask(__name__)
@@ -46,7 +45,7 @@ def insert_departments():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Endpoint to insert jobs
+# Endpoint to find employees by quarter in 2021
 @app.route('/employees_schema/insert/jobs', methods=['POST'])
 def insert_jobs():
         try:
@@ -62,6 +61,37 @@ def insert_jobs():
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+# Endpoint to view jobs by quarter
+@app.route('/employees_schema/jobsByQuarter', methods=['GET'])
+def jobsByQuarter():
+        try:
+            conn = get_db_connection()
+            c = conn.cursor()
+            query = """SELECT dep.department, job.job, 
+            SUM(CASE WHEN strftime('%m', emp.datetime) <= '03' THEN 1 ELSE 0 END) AS Q1,
+            SUM(CASE WHEN strftime('%m', emp.datetime) BETWEEN '04' AND '06' THEN 1 ELSE 0 END) AS Q2,
+            SUM(CASE WHEN strftime('%m', emp.datetime) BETWEEN '07' AND '09' THEN 1 ELSE 0 END) AS Q3,
+            SUM(CASE WHEN strftime('%m', emp.datetime) BETWEEN '10' AND '12' THEN 1 ELSE 0 END) AS Q4                    
+                    FROM hired_employees emp
+                    JOIN departments dep ON emp.department_id = dep.id
+                    JOIN jobs job ON emp.job_id = job.id
+                    WHERE strftime('%Y', emp.datetime) = '2021'
+                    GROUP BY dep.department, job.job;
+            """
+            c.execute(query)
+            records = c.fetchall()
+            
+            c.close()
+            if len(records) > 0:
+                return jsonify({'Jobs by quarter sent successfully': records}), 200
+            else:
+                return jsonify({'error': 'Could not retrieve data'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            if c:
+                c.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
