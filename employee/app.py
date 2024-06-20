@@ -68,6 +68,7 @@ def jobsByQuarter():
         try:
             conn = get_db_connection()
             c = conn.cursor()
+            #Ordered results are shown as intended without ORDER BY 
             query = """SELECT dep.department, job.job, 
             SUM(CASE WHEN strftime('%m', emp.datetime) <= '03' THEN 1 ELSE 0 END) AS Q1,
             SUM(CASE WHEN strftime('%m', emp.datetime) BETWEEN '04' AND '06' THEN 1 ELSE 0 END) AS Q2,
@@ -85,6 +86,61 @@ def jobsByQuarter():
             c.close()
             if len(records) > 0:
                 return jsonify({'Jobs by quarter sent successfully': records}), 200
+            else:
+                return jsonify({'error': 'Could not retrieve data'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            if c:
+                c.close()
+
+# Endpoint to view jobs by quarter
+@app.route('/employees_schema/departmentsAboveTheMean', methods=['GET'])
+def departmentsAboveTheMean():
+        try:
+            conn = get_db_connection()
+            c = conn.cursor()
+            #Ordered results are shown as intended without ORDER BY 
+            query = """WITH department_hired AS (
+                            SELECT 
+                                d.id AS department_id,
+                                d.department,
+                                COUNT(e.id) AS num_employees_hired
+                            FROM 
+                                hired_employees e
+                            JOIN 
+                                departments d ON e.department_id = d.id
+                            WHERE 
+                                strftime('%Y', e.datetime) = '2021'
+                            GROUP BY 
+                                d.id
+                        ),
+                        mean_hired AS (
+                            SELECT 
+                                AVG(num_employees_hired) AS mean_hired_2021
+                            FROM 
+                                department_hired
+                        )
+
+                        SELECT 
+                            dh.department_id AS id,
+                            dh.department AS name,
+                            dh.num_employees_hired
+                        FROM 
+                            department_hired dh,
+                            mean_hired mh
+                        WHERE 
+                            dh.num_employees_hired > mh.mean_hired_2021
+                        ORDER BY 
+                            dh.num_employees_hired DESC;
+
+            """
+            c.execute(query)
+            records = c.fetchall()
+            
+            c.close()
+            if len(records) > 0:
+                return jsonify({'Hired employees by department above the mean sent successfully': records}), 200
             else:
                 return jsonify({'error': 'Could not retrieve data'}), 500
         except Exception as e:
