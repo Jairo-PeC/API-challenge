@@ -45,7 +45,7 @@ def insert_departments():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Endpoint to find employees by quarter in 2021
+# Endpoint to insert jobs
 @app.route('/employees_schema/insert/jobs', methods=['POST'])
 def insert_jobs():
         try:
@@ -62,7 +62,7 @@ def insert_jobs():
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-# Endpoint to view jobs by quarter
+# Endpoint to view jobs by quarter in 2021
 @app.route('/employees_schema/jobsByQuarter', methods=['GET'])
 def jobsByQuarter():
         try:
@@ -94,13 +94,12 @@ def jobsByQuarter():
             if c:
                 c.close()
 
-# Endpoint to view jobs by quarter
+# Endpoint to view hired employees by department over the mean
 @app.route('/employees_schema/departmentsAboveTheMean', methods=['GET'])
 def departmentsAboveTheMean():
         try:
             conn = get_db_connection()
             c = conn.cursor()
-            #Ordered results are shown as intended without ORDER BY 
             query = """WITH department_hired AS (
                             SELECT 
                                 d.id AS department_id,
