@@ -45,8 +45,3 @@ Jairo Enrique Peña Cruz
 [Linkedin](https://www.linkedin.com/in/jairo-pena-cruz/)
 
 
- 
-## Acknowledgments
-- Funny fact,  I am more prolific building API rest apps in Java but I wanted to do this in Python because is the language I have been using the last 3-4 years mostly.
-
-
